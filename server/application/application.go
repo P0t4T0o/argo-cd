@@ -93,6 +93,7 @@ type Server struct {
 	cache             *servercache.Cache
 	projInformer      cache.SharedIndexInformer
 	enabledNamespaces []string
+	luaImportLibs     []string
 }
 
 // NewServer returns a new instance of the Application service
@@ -112,6 +113,7 @@ func NewServer(
 	settingsMgr *settings.SettingsManager,
 	projInformer cache.SharedIndexInformer,
 	enabledNamespaces []string,
+	luaImportLibs []string,
 ) (application.ApplicationServiceServer, AppResourceTreeFn) {
 	if appBroadcaster == nil {
 		appBroadcaster = &broadcasterHandler{}
@@ -137,6 +139,7 @@ func NewServer(
 		settingsMgr:       settingsMgr,
 		projInformer:      projInformer,
 		enabledNamespaces: enabledNamespaces,
+		luaImportLibs:     luaImportLibs,
 	}
 	return s, s.getAppResources
 }

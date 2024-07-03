@@ -308,6 +308,7 @@ func newTestAppServerWithEnforcerConfigure(f func(*rbac.Enforcer), t *testing.T,
 		settingsMgr,
 		projInformer,
 		[]string{},
+		[]string{},
 	)
 	return server.(*Server)
 }
@@ -487,6 +488,7 @@ func newTestAppServerWithEnforcerConfigureWithBenchmark(f func(*rbac.Enforcer), 
 		sync.NewKeyLock(),
 		settingsMgr,
 		projInformer,
+		[]string{},
 		[]string{},
 	)
 	return server.(*Server)
