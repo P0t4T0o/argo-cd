@@ -29,6 +29,7 @@ const (
 	healthScriptFile          = "health.lua"
 	actionScriptFile          = "action.lua"
 	actionDiscoveryScriptFile = "discovery.lua"
+	errFmtUnsupportedLuaLib   = "unsupported lua library: %s"
 )
 
 type ResourceHealthOverrides map[string]appv1.ResourceOverride
@@ -58,6 +59,7 @@ type VM struct {
 	ResourceOverrides map[string]appv1.ResourceOverride
 	// UseOpenLibs flag to enable open libraries. Libraries are disabled by default while running, but enabled during testing to allow the use of print statements
 	UseOpenLibs bool
+	ImportLibs  []string
 }
 
 func (vm VM) runLua(obj *unstructured.Unstructured, script string) (*lua.LState, error) {
@@ -65,17 +67,40 @@ func (vm VM) runLua(obj *unstructured.Unstructured, script string) (*lua.LState,
 		SkipOpenLibs: !vm.UseOpenLibs,
 	})
 	defer l.Close()
-	// Opens table library to allow access to functions to manipulate tables
-	for _, pair := range []struct {
+
+	type lib struct {
 		n string
 		f lua.LGFunction
-	}{
+	}
+
+	libs := make([]lib, 4)
+	idx := 0
+	for _, libName := range vm.ImportLibs {
+		switch libName {
+		case lua.StringLibName:
+			libs = append(libs[:idx], lib{lua.StringLibName, lua.OpenString})
+			idx++
+		case lua.MathLibName:
+			libs = append(libs[:idx], lib{lua.MathLibName, lua.OpenMath})
+			idx++
+		case lua.IoLibName:
+			libs = append(libs[:idx], lib{lua.IoLibName, lua.OpenIo})
+			idx++
+		default:
+			return nil, fmt.Errorf(errFmtUnsupportedLuaLib, libName)
+		}
+	}
+
+	libs = append(libs[:idx], []lib{
 		{lua.LoadLibName, lua.OpenPackage},
 		{lua.BaseLibName, lua.OpenBase},
 		{lua.TabLibName, lua.OpenTable},
 		// load our 'safe' version of the OS library
 		{lua.OsLibName, OpenSafeOs},
-	} {
+	}...)
+
+	// Opens libraries to allow access to functions
+	for _, pair := range libs {
 		if err := l.CallByParam(lua.P{
 			Fn:      l.NewFunction(pair.f),
 			NRet:    0,

@@ -229,6 +229,7 @@ type ArgoCDServerOpts struct {
 	ApplicationNamespaces   []string
 	EnableProxyExtension    bool
 	WebhookParallelism      int
+	LuaImportLibs           []string
 }
 
 type ApplicationSetOpts struct {
@@ -878,7 +879,8 @@ func newArgoCDServiceSet(a *ArgoCDServer) *ArgoCDServiceSet {
 		projectLock,
 		a.settingsMgr,
 		a.projInformer,
-		a.ApplicationNamespaces)
+		a.ApplicationNamespaces,
+		a.LuaImportLibs)
 
 	applicationSetService := applicationset.NewServer(
 		a.db,

@@ -433,6 +433,34 @@ func TestExecuteOldStyleResourceAction(t *testing.T) {
 	assert.Equal(t, expectedLuaUpdatedObj, newObjects[0].UnstructuredObj)
 }
 
+const validActionLuaWithImportedLib = `
+obj.metadata.labels["test"] = string.format("formatted-%s", "test")
+return obj
+`
+const expectedLuaUpdatedResultWithImportedLib = `
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  labels:
+    app.kubernetes.io/instance: helm-guestbook
+    test: formatted-test
+  name: helm-guestbook
+  namespace: default
+  resourceVersion: "123"
+`
+
+// Test an action that imports string library and formats a label
+func TestExecuteResourceActionWithImportedLib(t *testing.T) {
+	testObj := StrToUnstructured(objJSON)
+	expectedLuaUpdatedObj := StrToUnstructured(expectedLuaUpdatedResultWithImportedLib)
+	vm := VM{ImportLibs: []string{"string"}}
+	newObjects, err := vm.ExecuteResourceAction(testObj, validActionLuaWithImportedLib)
+	assert.NoError(t, err)
+	assert.Len(t, newObjects, 1)
+	assert.Equal(t, newObjects[0].K8SOperation, K8SOperation("patch"))
+	assert.Equal(t, expectedLuaUpdatedObj, newObjects[0].UnstructuredObj)
+}
+
 const cronJobObjYaml = `
 apiVersion: batch/v1
 kind: CronJob
